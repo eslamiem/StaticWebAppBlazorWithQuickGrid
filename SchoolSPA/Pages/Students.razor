@@ -1,6 +1,7 @@
 ﻿@page "/students"
 @inject HttpClient Http
 
+
 <PageTitle>My Students</PageTitle>
 
 <h1>My Students</h1>
@@ -11,37 +12,30 @@
 }
 else
 {
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>School</th>
-                <th>&nbsp;</th>
-                <th>&nbsp;</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in students)
-            {
-                <tr>
-                    <td>@item.StudentId</td>
-                    <td>@item.FirstName @item.LastName</td>
-                    <td>@item.School</td>
-                    <td><a class="btn btn-success btn-sm" href="/updel/@item.StudentId/edit">edit</a></td>
-                    <td><a class="btn btn-danger btn-sm" href="/updel/@item.StudentId/del">del</a></td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <QuickGrid Items="@students" Pagination="@pagination">
+    <PropertyColumn Property="@(_ => _.StudentId)" Sortable="true" />
+    <TemplateColumn Title="Name" SortBy="@sortByName">
+        <div class="flex items-center">
+            <nobr>
+                @context.FirstName @context.LastName
+            </nobr>
+        </div>
+    </TemplateColumn>
+    <PropertyColumn Property="@(_ => _.School)" Sortable="true" />
+</QuickGrid>
+    <Paginator State="@pagination" />
 }
 
 @code {
-    private Student[]? students;
+    private IQueryable<Student> students ;
 
+    GridSort<Student> sortByName = GridSort<Student>
+    .ByAscending(_ => _.FirstName).ThenAscending(_ => _.LastName);
+    private PaginationState pagination = new PaginationState { ItemsPerPage = 10 };
     protected override async Task OnInitializedAsync()
     {
         string URL = $"{Constants.SchoolAPIBase}students";
-        students = await Http.GetFromJsonAsync<Student[]>(URL);
+        var response = await Http.GetFromJsonAsync<Student[]>(URL);
+        students = response.AsQueryable();
     }
 }
